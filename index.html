@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Shopping Service</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style = "text-align: center;">
+    <div id='service'>AI Shopping Service</div>
+<div id="webcam-container"></div>
+<button type="button" onclick="init()">Start!</button>
+<div id="label-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+<script type="text/javascript">
+    // More API functions here:
+    // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
+
+    // the link to your model provided by Teachable Machine export panel
+    const URL = "./my_model/";
+
+    let model, webcam, labelContainer, maxPredictions;
+
+    // Load the image model and setup the webcam
+    async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        // load the model and metadata
+        // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
+        // or files from your local hard drive
+        // Note: the pose library adds "tmImage" object to your window (window.tmImage)
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        // Convenience function to setup a webcam
+        const flip = true; // whether to flip the webcam
+        webcam = new tmImage.Webcam(200, 200, flip); // width, height, flip
+        await webcam.setup(); // request access to the webcam
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+
+        // append elements to the DOM
+        document.getElementById("webcam-container").appendChild(webcam.canvas);
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) { // and class labels
+            labelContainer.appendChild(document.createElement("div"));
+        }
+    }
+
+    async function loop() {
+        webcam.update(); // update the webcam frame
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    const item = {
+        'Dole후룻볼슬라이스복숭아198g':{
+            'name' : 'Dole후룻볼슬라이스복숭아198g',
+            'info' : `가격: 2490원<br/>내용량 198g<br/>칼로리 145kcal<br/>원산지: 태국 산<br/>복숭아 함유량: 60%`
+        },
+        'LG생활건강)테크(일반용)3L': {
+            'name': 'LG생활건강)테크(일반용)3L',
+            'info': `가격: 6450원<br/>내용량: 3L<br/>종류: 의류, 섬유, 신발용, 액체형, 약알카리성<br/>생산국명: 대한민국`
+        }, 
+        '농심오징어짬뽕컵67g':{
+            'name' : '농심오징어짬뽕컵67g',
+            'info' : `가격: 900원<br/>내용량: 67g<br/>칼로리: 290kcal<br/>오징어 8.2%<br/>나트륨 1240mg, 탄수화물 46g, 당류 5g, 지방 9g,<br/>트랜스지방 0g, 포화지방 5g, 콜레스테롤 13mg, 단백질 6g, 칼슘 94mg`
+        },
+        '덴마크)데니쉬The건강한우유900mL':{
+            'name' : '덴마크)데니쉬The건강한우유900mL',
+            'info' : `가격: 2380원<br/>내용량: 900mL<br/>칼로리: 100mL당 65kcal<br/>원재료명: 1A등급 원유 100%(국산)`
+        },
+        '동아제약)가그린제로100ml':{
+            'name' : '동아제약)가그린제로100ml',
+            'info' : `가격: 1700원<br/>내용량: 100ml<br/>효능: 충치예방, 구치제거, 구강정화, 치태(프라그)제거, 치은염 예방<br/>색소(타르) 무첨가<br/>저장방법: 기밀용기, 실온 보관`
+        }, 
+        '동원참치라이트스탠다드200g':{
+            'name' : '동원참치라이트스탠다드200g',
+            'info' : `가격: 1930원<br/>내용량 200g<br/>칼로리: 420kcal<br/>원재료명: 가다랑어 79%(원양산), 카놀라유(외국산),<br/>야채즙{양파(국산), 당근(국산)},정제수`
+        },
+        '오뚜기)진라면순한맛5개입':{
+            'name' : '오뚜기)진라면순한맛5개입',
+            'info' : `가격: 3100원<br/>내용량 120g<br/>칼로리: 500kcal<br/>밀, 대두, 계란, 우유, <br/>쇠고기, 돼지고기, 닭고기, <br/>오징어, 조개류 함유`
+        },
+        '유어스광동어성초500ml':{
+            'name' : '유어스광동어성초500ml',
+            'info' : `가격: 1500원<br/>내용량: 500ml<br/>칼로리: 0kacl<br/>어성초 본연의 성분에 의해 간혹 흰색 침전물이 생길 수 있으나,<br/>변질이 아니오니 안심하시고 잘 흔들어 드십시오.`
+        },
+        '크라운)콘초66g':{
+            'name' : '크라운)콘초66g',
+            'info' : `가격: 1200원<br/>내용량: 66g<br/>칼로리: 330kcal<br/>우유, 대두 함유<br/>나트륨 55mg, 탄수화물 45g, 당류 19g, 지방 15g,<br/>트랜스지방 0g, 포화지방 6g, 콜레스테롤 0mg, 단백질 4g`
+        },
+        '토핑오트_애플시나몬':{
+            'name' : '토핑오트_애플시나몬',
+            'info' : `가격: 1000원<br/>내용량: 125g<br/>칼로리 165kcal<br/>제조사: 빙그레<br/>우유,대두,밀 함유`
+        }
+    }
+
+    var playing =flase; // flag
+
+    // run the webcam image through the image model
+    async function predict() {
+       
+        // predict can take in an image, video or canvas html element
+        const prediction = await model.predict(webcam.canvas);
+        for(let i = 0;i < maxPredictions; i++){
+            if(prediction[i].probability.toFixed(2) == 1.00 && !playing){
+
+                const data = item[prediction[i].className]
+                labelContainer.childNodes[i].innerHTML = `${data.name}<br/><br/>${data.info}`
+
+                playing = true
+                var audio = new Audio(i+'.mp3');
+                audio.addEventListener("ended",function(e){
+                    playing = false
+                    setTimeout(function(){labelContainer.childNodes[i].innerHTML = ""}, 500);
+                },false);
+
+                audio.volume = 0.5;
+                audio.play();
+            }        
+        }  
+    }
+</script>
+
+</body>
+</html>
